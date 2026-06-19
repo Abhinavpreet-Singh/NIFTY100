@@ -99,6 +99,15 @@ class DatabaseLoader:
         'market_cap': [
             'company_id', 'year', 'market_cap_cr', 'earnings_cr', 'book_value_cr',
             'pe_ratio', 'pb_ratio', 'ev_ebitda', 'dividend_yield'
+        ],
+        'financial_ratios': [
+            'company_id', 'year', 'net_profit_margin_pct', 'operating_profit_margin_pct',
+            'return_on_equity_pct', 'debt_to_equity', 'interest_coverage', 'asset_turnover',
+            'free_cash_flow_cr', 'capex_cr', 'earnings_per_share', 'book_value_per_share',
+            'dividend_payout_ratio_pct', 'total_debt_cr', 'cash_from_operations_cr'
+        ],
+        'peer_groups': [
+            'peer_group_name', 'company_id', 'is_benchmark'
         ]
     }
     
@@ -185,7 +194,7 @@ class DatabaseLoader:
                 'id', 'company_id', 'company_name', 'sector', 'sub_sector', 'website',
                 'nse_profile', 'bse_profile', 'company_logo', 'about_company', 'chart_link',
                 'year', 'date', 'document_name', 'document_url', 'document_type', 'pros', 'cons',
-                'broad_sector', 'peer_group'
+                'broad_sector', 'peer_group', 'peer_group_name'
             }
             
             for col in df_to_load.columns:
@@ -323,9 +332,10 @@ def run_etl_load(db_path: str = './data/nifty100.db', schema_path: str = './src/
     df_prices = pd.read_excel(Path(data_dir) / "supporting datasets" / "stock_prices.xlsx")
     df_mktcap = pd.read_excel(Path(data_dir) / "supporting datasets" / "market_cap.xlsx")
     df_peer = pd.read_excel(Path(data_dir) / "supporting datasets" / "peer_groups.xlsx")
+    df_ratios = pd.read_excel(Path(data_dir) / "supporting datasets" / "financial_ratios.xlsx")
     
     # 4. Normalize supplementary company_ids and dates/years
-    for df in [df_sectors, df_prices, df_mktcap, df_peer]:
+    for df in [df_sectors, df_prices, df_mktcap, df_peer, df_ratios]:
         if 'company_id' in df.columns:
             df['company_id'] = df['company_id'].apply(normalize_ticker)
             
@@ -336,10 +346,23 @@ def run_etl_load(db_path: str = './data/nifty100.db', schema_path: str = './src/
         # market_cap.xlsx uses integer years like 2024. Standardize to string
         df_mktcap['year'] = df_mktcap['year'].astype(str).str.strip()
 
+    if 'year' in df_ratios.columns:
+        df_ratios['year'] = df_ratios['year'].apply(normalize_year)
+
+    if 'is_benchmark' in df_peer.columns:
+        # Standardize is_benchmark boolean to 0 or 1 for SQLite CHECK constraint
+        df_peer['is_benchmark'] = df_peer['is_benchmark'].astype(int)
+
     # 5. Apply DQ Checks and Actions BEFORE Load
     # We validate raw data first
     validator = SchemaValidator(data_dir=data_dir)
-    validator.validate_all(core_dfs)
+    all_dfs = core_dfs.copy()
+    all_dfs['sectors'] = df_sectors
+    all_dfs['stock_prices'] = df_prices
+    all_dfs['market_cap'] = df_mktcap
+    all_dfs['financial_ratios'] = df_ratios
+    all_dfs['peer_groups'] = df_peer
+    validator.validate_all(all_dfs)
     validator.export_failures_to_csv('output/validation_failures.csv')
     
     # DQ-01: Companies PK Uniqueness check. Companies master list:
@@ -371,9 +394,14 @@ def run_etl_load(db_path: str = './data/nifty100.db', schema_path: str = './src/
     # Load companies table first so FK constraints work
     db.load_dataframe(df_co, 'companies')
 
+    # Merge core dfs and new supplementary dataframes for uniform processing
+    dfs_to_process = core_dfs.copy()
+    dfs_to_process['financial_ratios'] = df_ratios
+    dfs_to_process['peer_groups'] = df_peer
+
     # For other tables, apply rejections/cleanups based on DQ constraints
-    for name in ['profitandloss', 'balancesheet', 'cashflow', 'analysis', 'documents', 'prosandcons']:
-        df = core_dfs[name].copy()
+    for name in ['profitandloss', 'balancesheet', 'cashflow', 'analysis', 'documents', 'prosandcons', 'financial_ratios', 'peer_groups']:
+        df = dfs_to_process[name].copy()
         
         # DQ-08: normalise ticker and check length
         ticker_col = 'company_id'
@@ -394,6 +422,8 @@ def run_etl_load(db_path: str = './data/nifty100.db', schema_path: str = './src/
         # DQ-02: deduplicate composite keys (keep last)
         if 'year' in df.columns:
             df = df.drop_duplicates(subset=['company_id', 'year'], keep='last')
+        elif name == 'peer_groups':
+            df = df.drop_duplicates(subset=['peer_group_name', 'company_id'], keep='last')
             
         # DQ-10: non-negative fixed assets coercion in Balance Sheet
         if name == 'balancesheet' and 'fixed_assets' in df.columns:

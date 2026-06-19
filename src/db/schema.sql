@@ -234,6 +234,54 @@ CREATE TABLE IF NOT EXISTS market_cap (
 CREATE INDEX idx_mkt_company_year ON market_cap(company_id, year);
 CREATE INDEX idx_mkt_year ON market_cap(year);
 
+
+-- ============================================================
+-- TABLE 11: financial_ratios (Time-Series - Pre-computed ratios)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS financial_ratios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id TEXT NOT NULL,
+    year TEXT NOT NULL,
+    net_profit_margin_pct REAL,
+    operating_profit_margin_pct REAL,
+    return_on_equity_pct REAL,
+    debt_to_equity REAL,
+    interest_coverage REAL,
+    asset_turnover REAL,
+    free_cash_flow_cr REAL,
+    capex_cr REAL,
+    earnings_per_share REAL,
+    book_value_per_share REAL,
+    dividend_payout_ratio_pct REAL,
+    total_debt_cr REAL,
+    cash_from_operations_cr REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    CONSTRAINT unique_ratios CHECK (company_id != '' AND year != ''),
+    UNIQUE(company_id, year)
+);
+
+CREATE INDEX idx_ratios_company_year ON financial_ratios(company_id, year);
+CREATE INDEX idx_ratios_year ON financial_ratios(year);
+
+-- ============================================================
+-- TABLE 12: peer_groups (Reference - Peer comparison groups)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS peer_groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    peer_group_name TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    is_benchmark BOOLEAN NOT NULL CHECK (is_benchmark IN (0, 1)),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    UNIQUE(peer_group_name, company_id)
+);
+
+CREATE INDEX idx_peergroups_name ON peer_groups(peer_group_name);
+CREATE INDEX idx_peergroups_company ON peer_groups(company_id);
+
 -- ============================================================
 -- VIEWS FOR COMMON QUERIES
 -- ============================================================
@@ -311,14 +359,26 @@ BEGIN
     UPDATE cashflow SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS tr_financial_ratios_updated
+AFTER UPDATE ON financial_ratios
+BEGIN
+    UPDATE financial_ratios SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS tr_peer_groups_updated
+AFTER UPDATE ON peer_groups
+BEGIN
+    UPDATE peer_groups SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
 -- ============================================================
 -- INITIALIZATION COMMENTS
 -- ============================================================
--- Schema Version: 1.0
--- Created: 2026-06-18
--- Tables: 10 (core + supplementary)
+-- Schema Version: 1.1
+-- Created: 2026-06-19
+-- Tables: 12 (core + supplementary)
 -- Views: 2 (common queries)
--- Triggers: 4 (audit timestamp maintenance)
+-- Triggers: 6 (audit timestamp maintenance)
 --
 -- Key Constraints:
 -- - ALL TEXT IDs: company_id = UPPERCASE, normalized
@@ -327,11 +387,11 @@ END;
 -- - PRAGMA foreign_keys = ON: Enforced on connection
 -- - PRAGMA journal_mode = WAL: Write-Ahead Logging for concurrency
 --
--- Time-Series Tables (profitandloss, balancesheet, cashflow, stock_prices, market_cap):
+-- Time-Series Tables (profitandloss, balancesheet, cashflow, stock_prices, market_cap, financial_ratios):
 -- - Composite unique (company_id, year/date)
 -- - Indexed on (company_id, year/date) for fast joins
 --
--- Reference Tables (companies, analysis, documents, prosandcons, sectors):
--- - Single unique company_id (snapshot at reporting date)
+-- Reference Tables (companies, analysis, documents, prosandcons, sectors, peer_groups):
+-- - Single unique/composite unique reference mappings
 -- - No time-series versioning
 -- ============================================================

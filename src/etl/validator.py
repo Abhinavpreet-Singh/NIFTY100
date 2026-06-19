@@ -158,7 +158,7 @@ class SchemaValidator:
         # --------------------------------------------------------
         # DQ-03: FK Integrity
         # --------------------------------------------------------
-        child_tables = ['profitandloss', 'balancesheet', 'cashflow', 'analysis', 'documents', 'prosandcons']
+        child_tables = ['profitandloss', 'balancesheet', 'cashflow', 'analysis', 'documents', 'prosandcons', 'sectors', 'stock_prices', 'market_cap', 'financial_ratios', 'peer_groups']
         for name in child_tables:
             df = dfs.get(name)
             if df is not None and 'company_id' in df.columns:
@@ -255,7 +255,7 @@ class SchemaValidator:
         # DQ-07: Year Format
         # --------------------------------------------------------
         year_pattern = r'^\d{4}-\d{2}$'
-        for name in ['profitandloss', 'balancesheet', 'cashflow', 'documents']:
+        for name in ['profitandloss', 'balancesheet', 'cashflow', 'documents', 'financial_ratios']:
             df = dfs.get(name)
             if df is not None:
                 # In documents table in Excel, column is named 'Year' or 'year'
@@ -455,7 +455,7 @@ class SchemaValidator:
         # --------------------------------------------------------
         # DQ-16: Coverage Check
         # --------------------------------------------------------
-        for name in ['profitandloss', 'balancesheet', 'cashflow']:
+        for name in ['profitandloss', 'balancesheet', 'cashflow', 'financial_ratios']:
             df = dfs.get(name)
             if df is not None and 'company_id' in df.columns:
                 counts = df['company_id'].value_counts()
