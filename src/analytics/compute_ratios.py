@@ -350,6 +350,123 @@ def compute_and_populate_cagr(db_path: str):
     
     logger.info(f"Populated analysis table in SQLite with {len(analysis_records)} rows.")
 
+def analyze_bank_roce(db_path: str):
+    """
+    Day 13: Sector-relative ROCE analysis for Banks/NBFCs (Financials broad sector).
+    Computes sector median ROCE and logs anomalies.
+    Saves results to output/sector_roce_notes.csv.
+    """
+    conn = get_connection(db_path)
+    
+    # 1. Fetch companies, their sector mapping
+    df_sectors = pd.read_sql_query("SELECT company_id, broad_sector, sub_sector FROM sectors", conn)
+    # Filter for broad_sector == 'Financials'
+    df_financials = df_sectors[df_sectors['broad_sector'] == 'Financials'].copy()
+    financial_tickers = set(df_financials['company_id'].str.strip().str.upper())
+    
+    # 2. Get ROCE parameters (depreciation, operating_profit from profitandloss, and equity/borrowings from balancesheet)
+    df_pl = pd.read_sql_query("SELECT company_id, year, operating_profit, depreciation FROM profitandloss", conn)
+    df_bs = pd.read_sql_query("SELECT company_id, year, equity_capital, reserves, borrowings FROM balancesheet", conn)
+    
+    conn.close()
+    
+    # Standardize dataframes
+    for df in [df_pl, df_bs]:
+        df['company_id'] = df['company_id'].str.strip().str.upper()
+        df['year'] = df['year'].str.strip()
+        
+    # Calculate ROCE for all company-years
+    df_roce = pd.merge(df_pl, df_bs, on=['company_id', 'year'], how='inner')
+    df_roce['roce'] = df_roce.apply(
+        lambda r: calculate_roce(r['operating_profit'], r['depreciation'], r['equity_capital'], r['reserves'], r['borrowings']),
+        axis=1
+    )
+    
+    # Filter for financials
+    df_fin_roce = df_roce[df_roce['company_id'].isin(financial_tickers)].copy()
+    
+    if df_fin_roce.empty:
+        logger.warning("No financial company ROCE data found for relative analysis.")
+        return
+        
+    # Drop rows with None ROCE
+    df_fin_roce = df_fin_roce.dropna(subset=['roce'])
+    
+    # Group by year to compute median and standard deviation
+    sector_stats = df_fin_roce.groupby('year')['roce'].agg(['median', 'std']).reset_index()
+    sector_stats.rename(columns={'median': 'sector_median', 'std': 'sector_std'}, inplace=True)
+    
+    # Fill NaN std (e.g. if only 1 company in a year) with 0
+    sector_stats['sector_std'] = sector_stats['sector_std'].fillna(0.0)
+    
+    # Merge stats back
+    df_fin_roce = df_fin_roce.merge(sector_stats, on='year', how='left')
+    df_fin_roce = df_fin_roce.merge(df_financials, on='company_id', how='left')
+    
+    notes_records = []
+    anomalies = []
+    
+    for _, row in df_fin_roce.iterrows():
+        co = row['company_id']
+        year = row['year']
+        roce = row['roce']
+        median = row['sector_median']
+        std = row['sector_std']
+        sub_sec = row['sub_sector']
+        
+        diff = roce - median
+        classification = "Outperforming" if diff >= 0 else "Underperforming"
+        
+        # Determine anomaly
+        is_anomaly = False
+        anomaly_reason = []
+        
+        if std > 0 and abs(diff) > 1.5 * std:
+            is_anomaly = True
+            anomaly_reason.append(f"Significant deviation from sector median (>1.5 std, diff={diff:.2f}%)")
+            
+        if roce < 0:
+            is_anomaly = True
+            anomaly_reason.append("Negative ROCE")
+            
+        if roce > 30.0:
+            is_anomaly = True
+            anomaly_reason.append("Exceptionally high ROCE (>30%)")
+            
+        note = "; ".join(anomaly_reason) if is_anomaly else "Normal"
+        
+        if is_anomaly:
+            anomalies.append(
+                f"[ROCE Bank Anomaly] Co: {co}, Year: {year} | ROCE: {roce:.2f}% | Sector Median: {median:.2f}% | Note: {note}"
+            )
+            
+        notes_records.append({
+            'company_id': co,
+            'year': year,
+            'sub_sector': sub_sec,
+            'computed_roce': round(roce, 4),
+            'sector_median_roce': round(median, 4),
+            'deviation_from_median': round(diff, 4),
+            'classification': classification,
+            'anomaly_flag': 1 if is_anomaly else 0,
+            'note': note
+        })
+        
+    # Write to sector_roce_notes.csv
+    keys = ['company_id', 'year', 'sub_sector', 'computed_roce', 'sector_median_roce', 'deviation_from_median', 'classification', 'anomaly_flag', 'note']
+    with open('output/sector_roce_notes.csv', 'w', newline='', encoding='utf-8') as f:
+        dict_writer = csv.DictWriter(f, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(notes_records)
+        
+    # Append ROCE bank anomaly logs to edge cases log
+    with open('output/ratio_edge_cases.log', 'a', encoding='utf-8') as f:
+        f.write("\n=== BANK/NBFC ROCE ANOMALIES ===\n\n")
+        for ec in anomalies:
+            f.write(ec + "\n")
+            
+    logger.info(f"Sector-relative ROCE analysis completed. Exported {len(notes_records)} records to output/sector_roce_notes.csv.")
+
 def main():
     setup_directories()
     
@@ -368,6 +485,9 @@ def main():
             
         # Step 2: Compute and populate CAGR/averages
         compute_and_populate_cagr(db_path)
+        
+        # Step 3: Sector-relative ROCE analysis for Banks/NBFCs
+        analyze_bank_roce(db_path)
         
         logger.info("Ratio Engine and CAGR computation completed successfully!")
     except Exception as e:
