@@ -84,12 +84,28 @@ python -m src.db.loader
 *Database generated: `data/nifty100.db`*  
 *Audit log generated: `output/load_audit.csv`*
 
+## 🚀 Running the Analytics & Dashboard
+
+### 1. Run valuation analysis
+To calculate valuation multiples, FCF yields, and cautions/discounts:
+```powershell
+python -m src.analytics.valuation
+```
+*Outputs generated: `output/valuation_summary.xlsx` and `output/valuation_flags.csv`*
+
+### 2. Start interactive Streamlit dashboard
+To start the local web application:
+```powershell
+streamlit run src/dashboard/app.py
+```
+*Platform opens at http://localhost:8501*
+
 ---
 
 ## 🧪 Testing
 
-To run the complete test suite (normalizer and data quality validation tests):
+To run the complete test suite (normalizers, data quality validator, KPI ratios, CAGR, peer comparisons, and valuation):
 ```powershell
 python -m pytest -v
 ```
-Currently: **76/76 unit tests passing** (100% success rate).
+Currently: **105/105 unit tests passing** (100% success rate).
