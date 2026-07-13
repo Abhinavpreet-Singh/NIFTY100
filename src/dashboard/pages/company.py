@@ -43,7 +43,7 @@ sub_sector = df_sec['sub_sector'].values[0] if not df_sec.empty else (df_co['sub
 st.markdown(f"**Sector**: `{sector}` | **Sub-Sector**: `{sub_sector}`")
 st.markdown(f"**Description**: {about_company}")
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
 # 2. Fetch latest ratios for Tiles (2024-03)
 latest_year = "2024-03"
@@ -83,7 +83,7 @@ if not df_latest_ratios.empty:
 else:
     st.warning(f"No ratios calculated for the company '{ticker}' for financial year {latest_year}.")
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
 # 3. Qualitative Badges: Pros & Cons
 st.subheader("Qualitative Analysis")
@@ -115,7 +115,7 @@ if not df_pc.empty:
 else:
     st.info("No qualitative pros/cons recorded in database for this company.")
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
 # 4. Financial Charts
 st.subheader("Financial Statements Visualization (2019-2024)")
@@ -132,9 +132,9 @@ if not df_pl.empty:
         margin=dict(t=30, b=30, l=40, r=40),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='#e0e6ed',
-        xaxis=dict(showgrid=True, gridcolor='#30363d'),
-        yaxis=dict(showgrid=True, gridcolor='#30363d')
+        font_family='Times New Roman',
+        xaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)'),
+        yaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)')
     )
     st.plotly_chart(fig_pl, use_container_width=True)
 else:
@@ -163,9 +163,9 @@ if not df_bs.empty:
         margin=dict(t=30, b=30, l=40, r=40),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='#e0e6ed',
-        xaxis=dict(showgrid=True, gridcolor='#30363d'),
-        yaxis=dict(showgrid=True, gridcolor='#30363d')
+        font_family='Times New Roman',
+        xaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)'),
+        yaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)')
     )
     st.plotly_chart(fig_bs, use_container_width=True)
 else:
@@ -186,9 +186,9 @@ if not df_cf.empty:
         margin=dict(t=30, b=30, l=40, r=40),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='#e0e6ed',
-        xaxis=dict(showgrid=True, gridcolor='#30363d'),
-        yaxis=dict(showgrid=True, gridcolor='#30363d')
+        font_family='Times New Roman',
+        xaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)'),
+        yaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)')
     )
     st.plotly_chart(fig_cf, use_container_width=True)
 else:

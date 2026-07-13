@@ -103,7 +103,7 @@ if 'FCF (Cr)' in df_peers_display.columns:
 
 st.dataframe(df_peers_display, use_container_width=True, hide_index=True)
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
 # 4. Radar Chart Display
 st.subheader("Radar Chart Performance Comparison")

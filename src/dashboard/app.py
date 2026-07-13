@@ -45,7 +45,7 @@ df_data = load_query(query_summary)
 
 # 2. Compute Summary Metrics
 total_companies = len(df_data)
-avg_roe = df_data['return_on_equity_pct'].mean()
+median_roe = df_data['return_on_equity_pct'].median()
 median_pe = df_data['pe_ratio'].median()
 total_mcap_lakh_cr = df_data['market_cap_cr'].sum() / 100000.0  # Convert Cr to Lakh Cr
 
@@ -55,37 +55,46 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric(label="Total Companies", value=f"{total_companies}")
 with col2:
-    st.metric(label="Average ROE % (FY24)", value=f"{avg_roe:.2f}%" if pd.notna(avg_roe) else "N/A")
+    st.metric(label="Median ROE % (FY24)", value=f"{median_roe:.2f}%" if pd.notna(median_roe) else "N/A")
 with col3:
     st.metric(label="Median P/E (FY24)", value=f"{median_pe:.2f}" if pd.notna(median_pe) else "N/A")
 with col4:
     st.metric(label="Total Market Cap (Lakh Cr)", value=f"₹{total_mcap_lakh_cr:.2f} L Cr")
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
-# 3. Donut Chart for Sector Distribution
+# 3. Sector Distribution (2-column layout for better aspect ratio compatibility)
 st.subheader("Sector Breakdown")
+
+col_table, col_chart = st.columns([5, 7])
+
+# Sector counts table preparation
 sector_counts = df_data['broad_sector'].value_counts().reset_index()
 sector_counts.columns = ['Sector', 'Company Count']
+sector_counts['Weight %'] = (sector_counts['Company Count'] / len(df_data) * 100).map(lambda x: f"{x:.2f}%")
 
-fig_donut = px.pie(
-    sector_counts, 
-    values='Company Count', 
-    names='Sector', 
-    hole=0.4,
-    color_discrete_sequence=px.colors.qualitative.Plotly
-)
-fig_donut.update_layout(
-    margin=dict(t=10, b=10, l=10, r=10),
-    paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',
-    font_color='#e0e6ed',
-    legend=dict(orientation="h", yanchor="bottom", y=-0.5, xanchor="center", x=0.5)
-)
+with col_table:
+    st.markdown("**Sector Representation Summary**")
+    st.dataframe(sector_counts, use_container_width=True, hide_index=True)
 
-st.plotly_chart(fig_donut, use_container_width=True)
+with col_chart:
+    fig_donut = px.pie(
+        sector_counts, 
+        values='Company Count', 
+        names='Sector', 
+        hole=0.4,
+        color_discrete_sequence=px.colors.qualitative.Plotly
+    )
+    fig_donut.update_layout(
+        margin=dict(t=10, b=10, l=10, r=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font_family='Times New Roman',
+        showlegend=True
+    )
+    st.plotly_chart(fig_donut, use_container_width=True)
 
-st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
 # 4. Companies Directory Table
 st.subheader("Nifty 100 Universe")

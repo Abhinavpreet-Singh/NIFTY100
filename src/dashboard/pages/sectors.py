@@ -76,15 +76,15 @@ if not df_sec_data.empty:
         margin=dict(t=30, b=30, l=40, r=40),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font_color='#e0e6ed',
-        xaxis=dict(showgrid=True, gridcolor='#30363d'),
-        yaxis=dict(showgrid=True, gridcolor='#30363d')
+        font_family='Times New Roman',
+        xaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)'),
+        yaxis=dict(showgrid=True, gridcolor='rgba(128, 128, 128, 0.15)')
     )
     fig_bubble.update_traces(textposition='top center')
     
     st.plotly_chart(fig_bubble, use_container_width=True)
     
-    st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
     
     # 4. Outlier Detection (>2 std deviations or bottom decile)
     st.subheader("⚠️ Sector Outlier Detection")

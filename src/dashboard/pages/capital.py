@@ -72,23 +72,34 @@ if not df_cf_clean.empty:
     st.subheader("Nifty 100 Cash Allocation Map (FY24)")
     st.markdown("Size: Market Cap (Cr) | Color: Capital Allocation Pattern Category")
     
-    # 3. Plot Treemap
+    # 3. Plot Treemap with premium custom colors representing financial health
+    custom_colors = {
+        "[+, -, -]": "#1a7f37",  # Soft Green (Healthy)
+        "[+, -, +]": "#0969da",  # Soft Blue (Growth)
+        "[+, +, -]": "#6e7781",  # Soft Grey (Harvester)
+        "[+, +, +]": "#8250df",  # Soft Purple (Liquidity)
+        "[-, -, +]": "#d97706",  # Soft Amber (Startup)
+        "[-, -, -]": "#cf222e",  # Soft Red (Cash Burn)
+        "[-, +, +]": "#bc4c00",  # Soft Orange (Survival)
+        "[-, +, -]": "#8c1d1d"   # Dark Red (Liquidation)
+    }
+    
     fig_tree = px.treemap(
         df_cf_clean,
         path=['Pattern Description', 'Sector', 'Ticker'],
         values='Market Cap (Cr)',
         color='Pattern',
         hover_data=['Company Name', 'CFO', 'CFI', 'CFF'],
-        color_discrete_sequence=px.colors.qualitative.Plotly
+        color_discrete_map=custom_colors
     )
     fig_tree.update_layout(
         margin=dict(t=30, b=30, l=10, r=10),
         paper_bgcolor='rgba(0,0,0,0)',
-        font_color='#e0e6ed'
+        font_family='Times New Roman'
     )
     st.plotly_chart(fig_tree, use_container_width=True)
     
-    st.markdown("<hr style='border-top: 1px solid #30363d; margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
     
     # 4. Filter List by Pattern Category
     st.subheader("Search Companies by Pattern Category")
