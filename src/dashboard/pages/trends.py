@@ -12,7 +12,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Trend Analysis - Nifty 100",
-    page_icon="📈",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,7 +20,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("📈 Multi-Year Trend Analysis")
+st.title("Multi-Year Trend Analysis")
 st.markdown("Analyze time-series financial metrics and YoY percentage changes.")
 
 # 1. Select Ticker and Metric
@@ -95,6 +95,6 @@ if not df_ts.empty:
     df_yoy_display['YoY Change %'] = df_yoy_display['YoY Change %'].map(lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/A")
     df_yoy_display['YoY Change (Absolute)'] = df_yoy_display['YoY Change (Absolute)'].map(lambda x: f"₹{x:+,.2f}" if pd.notna(x) else "N/A")
     
-    st.dataframe(df_yoy_display, use_container_width=True, hide_index=True)
+    st.dataframe(df_yoy_display.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
 else:
     st.info(f"No multi-year records found for metric '{selected_metric_name}' for company '{ticker}'.")

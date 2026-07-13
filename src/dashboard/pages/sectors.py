@@ -13,7 +13,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Sector Analysis - Nifty 100",
-    page_icon="📊",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -21,7 +21,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("📊 Sector Performance Analysis")
+st.title("Sector Performance Analysis")
 st.markdown("Compare sector-relative performance metrics and flag statistical outliers.")
 
 # 1. Sector Selection
@@ -87,7 +87,7 @@ if not df_sec_data.empty:
     st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
     
     # 4. Outlier Detection (>2 std deviations or bottom decile)
-    st.subheader("⚠️ Sector Outlier Detection")
+    st.subheader("Sector Outlier Detection")
     st.markdown("Flagging companies with exceptionally high/low valuations or returns relative to their sector averages.")
     
     # Compute sector mean/std dev for ROE and P/E
@@ -137,7 +137,7 @@ if not df_sec_data.empty:
             
     if outliers:
         df_outliers = pd.DataFrame(outliers)
-        st.dataframe(df_outliers, use_container_width=True, hide_index=True)
+        st.dataframe(df_outliers.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
     else:
         st.write("No statistical outliers detected in this sector.")
 else:

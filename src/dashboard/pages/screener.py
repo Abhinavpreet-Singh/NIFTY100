@@ -12,7 +12,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Financial Screener - Nifty 100",
-    page_icon="🔍",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,7 +20,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("🔍 Financial Screener & Filter Engine")
+st.title("Financial Screener & Filter Engine")
 st.markdown("Screen Nifty 100 companies based on ratios, growth, and valuations.")
 
 # Load screener presets configuration
@@ -68,12 +68,8 @@ df_base = load_query(query_screener)
 # Drop columns that are completely null, keep data clean
 df_base = df_base.dropna(subset=['Ticker', 'Company Name'])
 
-# Sidebar interactive elements
-st.sidebar.subheader("Filter Presets")
-preset_options = ["None"] + list(presets.keys())
-selected_preset = st.sidebar.selectbox("Choose a screener preset:", preset_options)
-
-st.sidebar.subheader("Custom Threshold Filters")
+# 1. Reserve results container at the top of the page (below title)
+results_container = st.container()
 
 # Initialize default values
 def_min_roe = 0.0
@@ -84,6 +80,13 @@ def_max_pe = 200.0
 def_max_pb = 50.0
 def_min_div_yield = 0.0
 
+# 2. Render Filter Controls & Presets at the bottom
+st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 25px 0;'>", unsafe_allow_html=True)
+st.subheader("Filter Controls")
+
+preset_options = ["None"] + list(presets.keys())
+selected_preset = st.selectbox("Choose a screener preset:", preset_options)
+    
 # If preset is selected, load thresholds
 if selected_preset != "None":
     p_config = presets[selected_preset]
@@ -96,7 +99,7 @@ if selected_preset != "None":
     if 'free_cash_flow_cr' in filters:
         def_min_fcf = float(filters['free_cash_flow_cr'].get('min', -5000.0))
     if 'revenue_5yr_cagr' in filters:
-        def_min_rev_cagr = float(filters['revenue_5yr_cagr'].get('min', -500.0))
+        def_min_rev_cagr = float(filters['revenue_5yr_cagr'].get('min', -50.0))
     if 'pe_ratio' in filters:
         def_max_pe = float(filters['pe_ratio'].get('max', 200.0))
     if 'pb_ratio' in filters:
@@ -105,17 +108,22 @@ if selected_preset != "None":
         def_min_div_yield = float(filters['dividend_yield'].get('min', 0.0))
         
     st.info(f"Loaded filters for: **{selected_preset}**")
+    
+st.markdown("**Custom Threshold Filters**")
 
-# Set up sliders in sidebar
-val_roe = st.sidebar.slider("Min ROE %", -50.0, 100.0, def_min_roe, step=1.0)
-val_de = st.sidebar.slider("Max Debt to Equity", 0.0, 10.0, def_max_de, step=0.1)
-val_fcf = st.sidebar.slider("Min FCF (Cr)", -2000.0, 10000.0, def_min_fcf, step=10.0)
-val_rev_cagr = st.sidebar.slider("Min Revenue 5yr CAGR %", -20.0, 50.0, def_min_rev_cagr, step=1.0)
-val_pe = st.sidebar.slider("Max P/E Ratio", 0.0, 150.0, def_max_pe, step=1.0)
-val_pb = st.sidebar.slider("Max P/B Ratio", 0.0, 30.0, def_max_pb, step=0.5)
-val_div_yield = st.sidebar.slider("Min Dividend Yield %", 0.0, 10.0, def_min_div_yield, step=0.1)
+col1, col2, col3 = st.columns(3)
+with col1:
+    val_roe = st.slider("Min ROE %", -50.0, 100.0, def_min_roe, step=1.0)
+    val_de = st.slider("Max Debt to Equity", 0.0, 10.0, def_max_de, step=0.1)
+with col2:
+    val_fcf = st.slider("Min FCF (Cr)", -2000.0, 10000.0, def_min_fcf, step=10.0)
+    val_rev_cagr = st.slider("Min Revenue 5yr CAGR %", -20.0, 50.0, def_min_rev_cagr, step=1.0)
+with col3:
+    val_pe = st.slider("Max P/E Ratio", 0.0, 150.0, def_max_pe, step=1.0)
+    val_pb = st.slider("Max P/B Ratio", 0.0, 30.0, def_max_pb, step=0.5)
+    val_div_yield = st.slider("Min Dividend Yield %", 0.0, 10.0, def_min_div_yield, step=0.1)
 
-# Apply filters
+# 3. Apply Filters
 df_filtered = df_base.copy()
 
 # Filter ROE
@@ -138,8 +146,6 @@ df_filtered = df_filtered[df_filtered['Dividend Yield %'] >= val_div_yield]
 
 # Check preset-specific custom filters
 if selected_preset == "Turnaround Watch":
-    # Custom Turnaround Logic: FCF latest > 0, FCF latest > FCF previous, D/E latest < D/E previous
-    # We load FCF and D/E history
     df_hist = load_query("SELECT company_id, year, free_cash_flow_cr, debt_to_equity FROM financial_ratios")
     df_hist['company_id'] = df_hist['company_id'].str.strip().str.upper()
     df_hist['year'] = df_hist['year'].str.strip()
@@ -166,49 +172,49 @@ if selected_preset == "Turnaround Watch":
     df_filtered = df_filtered[df_filtered['Ticker'].isin(valid_tickers)]
 
 elif selected_preset == "Debt-Free Blue Chip":
-    # Revenue / Sales > 5,000
     df_filtered = df_filtered[df_filtered['Revenue / Sales (Cr)'] >= 5000.0]
 
-# Display Results
-st.subheader(f"Filtered Results ({len(df_filtered)} companies)")
-
-if not df_filtered.empty:
-    # Sort
-    sort_col = "ROE %"
-    if selected_preset == "Value Pick":
-        sort_col = "FCF Yield %"
-    elif selected_preset == "Growth Accelerator":
-        sort_col = "PAT 5yr CAGR %"
-    elif selected_preset == "Dividend Champion":
-        sort_col = "Dividend Yield %"
-    elif selected_preset == "Turnaround Watch":
-        sort_col = "Revenue 3yr CAGR %"
+# 4. Render Results into the reserved top container
+with results_container:
+    st.subheader(f"Filtered Results ({len(df_filtered)} companies)")
+    
+    if not df_filtered.empty:
+        # Sort
+        sort_col = "ROE %"
+        if selected_preset == "Value Pick":
+            sort_col = "FCF Yield %"
+        elif selected_preset == "Growth Accelerator":
+            sort_col = "PAT 5yr CAGR %"
+        elif selected_preset == "Dividend Champion":
+            sort_col = "Dividend Yield %"
+        elif selected_preset == "Turnaround Watch":
+            sort_col = "Revenue 3yr CAGR %"
+            
+        df_sorted = df_filtered.sort_values(sort_col, ascending=False)
         
-    df_sorted = df_filtered.sort_values(sort_col, ascending=False)
-    
-    # Select columns to display
-    display_cols = [
-        'Ticker', 'Company Name', 'Sector', 'ROE %', 'D/E', 'FCF (Cr)', 
-        'Revenue 5yr CAGR %', 'P/E', 'P/B', 'Dividend Yield %', 'FCF Yield %'
-    ]
-    df_sorted_display = df_sorted[display_cols].copy()
-    
-    # Formatting floats
-    for col in ['ROE %', 'Revenue 5yr CAGR %', 'Dividend Yield %', 'FCF Yield %']:
-        df_sorted_display[col] = df_sorted_display[col].map(lambda x: f"{x:.2f}%" if pd.notna(x) else "N/A")
-    for col in ['D/E', 'P/E', 'P/B']:
-        df_sorted_display[col] = df_sorted_display[col].map(lambda x: f"{x:.2f}" if pd.notna(x) else "N/A")
-    df_sorted_display['FCF (Cr)'] = df_sorted_display['FCF (Cr)'].map(lambda x: f"₹{x:,.2f} Cr" if pd.notna(x) else "N/A")
-    
-    st.dataframe(df_sorted_display, use_container_width=True, hide_index=True)
-    
-    # Export options
-    csv = df_sorted.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Download Filtered Results as CSV",
-        data=csv,
-        file_name='screener_results.csv',
-        mime='text/csv'
-    )
-else:
-    st.info("No companies match the selected criteria.")
+        # Select columns to display
+        display_cols = [
+            'Ticker', 'Company Name', 'Sector', 'ROE %', 'D/E', 'FCF (Cr)', 
+            'Revenue 5yr CAGR %', 'P/E', 'P/B', 'Dividend Yield %', 'FCF Yield %'
+        ]
+        df_sorted_display = df_sorted[display_cols].copy()
+        
+        # Formatting floats
+        for col in ['ROE %', 'Revenue 5yr CAGR %', 'Dividend Yield %', 'FCF Yield %']:
+            df_sorted_display[col] = df_sorted_display[col].map(lambda x: f"{x:.2f}%" if pd.notna(x) else "N/A")
+        for col in ['D/E', 'P/E', 'P/B']:
+            df_sorted_display[col] = df_sorted_display[col].map(lambda x: f"{x:.2f}" if pd.notna(x) else "N/A")
+        df_sorted_display['FCF (Cr)'] = df_sorted_display['FCF (Cr)'].map(lambda x: f"₹{x:,.2f} Cr" if pd.notna(x) else "N/A")
+        
+        st.dataframe(df_sorted_display.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
+        
+        # Export options
+        csv = df_sorted.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Filtered Results as CSV",
+            data=csv,
+            file_name='screener_results.csv',
+            mime='text/csv'
+        )
+    else:
+        st.info("No companies match the selected criteria.")

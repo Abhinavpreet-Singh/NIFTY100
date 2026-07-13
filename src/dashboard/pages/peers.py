@@ -13,7 +13,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Peer Comparison - Nifty 100",
-    page_icon="👥",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -21,7 +21,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("👥 Peer Comparison Engine")
+st.title("Peer Comparison Engine")
 st.markdown("Compare Nifty 100 companies with their peers and benchmarks.")
 
 # 1. Select Peer Group
@@ -76,12 +76,12 @@ df_peers_display = df_peers.copy()
 
 # Add badges for Best in Class and Watch List
 df_peers_display['Badges'] = df_peers_display.apply(
-    lambda r: ("⭐ Best in Class" if r['Best in Class'] == 1 else "") + 
-              ("⚠️ Watch List" if r['Watch List'] == 1 else ""),
+    lambda r: ("Best in Class" if r['Best in Class'] == 1 else "") + 
+              ("Watch List" if r['Watch List'] == 1 else ""),
     axis=1
 )
 
-df_peers_display['Is Benchmark'] = df_peers_display['Is Benchmark'].map(lambda x: "Yes 🏆" if x == 1 else "No")
+df_peers_display['Is Benchmark'] = df_peers_display['Is Benchmark'].map(lambda x: "Yes" if x == 1 else "No")
 
 # Drop raw flag columns
 df_peers_display.drop(columns=['Best in Class', 'Watch List'], inplace=True, errors='ignore')
@@ -101,7 +101,7 @@ for col in cols_to_format_float:
 if 'FCF (Cr)' in df_peers_display.columns:
     df_peers_display['FCF (Cr)'] = df_peers_display['FCF (Cr)'].map(lambda x: f"₹{x:,.2f} Cr" if pd.notna(x) else "N/A")
 
-st.dataframe(df_peers_display, use_container_width=True, hide_index=True)
+st.dataframe(df_peers_display.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
 
 st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
 
@@ -120,6 +120,6 @@ if os.path.exists(chart_path):
     # Use columns to center image
     col_l, col_m, col_r = st.columns([1, 2, 1])
     with col_m:
-        st.image(img, caption=f"8-Axis Polar Radar Chart for {selected_co} (Peer Group: {selected_group})", use_container_width=True)
+        st.image(img, caption=f"8-Axis Polar Radar Chart for {selected_co} (Peer Group: {selected_group})", use_column_width=True)
 else:
     st.info(f"No pre-computed radar chart found for company {selected_co} at path `{chart_path}`.")

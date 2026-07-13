@@ -12,7 +12,7 @@ from utils.shared import render_navigation, load_query
 # Set Streamlit Page Configuration
 st.set_page_config(
     page_title="Nifty 100 Intelligence Platform",
-    page_icon="🏠",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,9 +20,8 @@ st.set_page_config(
 # Render Custom Sidebar Navigation
 render_navigation()
 
-# Title
-st.title("🏠 Nifty 100 Market Intelligence")
-st.markdown("A comprehensive intelligence platform analyzing performance, ratios, and valuation for Nifty 100 companies.")
+# Description
+st.markdown("<p style='font-size: 18px !important; font-weight: bold; margin-top: 5px; margin-bottom: 20px;'>A comprehensive intelligence platform analyzing performance, ratios, and valuation for Nifty 100 companies.</p>", unsafe_allow_html=True)
 
 # 1. Load Data for Overview
 latest_year = "2024-03"
@@ -75,7 +74,7 @@ sector_counts['Weight %'] = (sector_counts['Company Count'] / len(df_data) * 100
 
 with col_table:
     st.markdown("**Sector Representation Summary**")
-    st.dataframe(sector_counts, use_container_width=True, hide_index=True)
+    st.dataframe(sector_counts.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
 
 with col_chart:
     fig_donut = px.pie(
@@ -116,11 +115,11 @@ for col in ['ROE %', 'P/E Ratio']:
 df_display['Market Cap (Cr)'] = df_display['Market Cap (Cr)'].map(lambda x: f"₹{x:,.1f} Cr" if pd.notna(x) else "N/A")
 
 # Text search input for filtering table
-search_term = st.text_input("🔍 Search Company Name or Ticker:", "")
+search_term = st.text_input("Search Company Name or Ticker:", "")
 if search_term:
     df_display = df_display[
         df_display['Ticker'].str.contains(search_term, case=False) |
         df_display['Company Name'].str.contains(search_term, case=False)
     ]
 
-st.dataframe(df_display, use_container_width=True, hide_index=True)
+st.dataframe(df_display.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)

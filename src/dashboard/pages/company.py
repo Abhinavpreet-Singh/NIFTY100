@@ -14,7 +14,7 @@ from utils.shared import render_navigation, load_query
 # Set Streamlit Page Configuration
 st.set_page_config(
     page_title="Company Profile - Nifty 100",
-    page_icon="🏢",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -22,7 +22,7 @@ st.set_page_config(
 # Render Custom Sidebar Navigation
 render_navigation()
 
-st.title("🏢 Company Profile & Financial Statements")
+st.title("Company Profile & Financial Statements")
 
 # Load list of tickers and names for selection
 df_companies = load_query("SELECT id, company_name FROM companies ORDER BY id")
@@ -96,20 +96,20 @@ if not df_pc.empty:
     col_p, col_c = st.columns(2)
     
     with col_p:
-        st.markdown("<h4 style='color: #2ea043;'>➕ Pros</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #2ea043;'>Pros</h4>", unsafe_allow_html=True)
         if pd.notna(pros_text) and pros_text.strip():
             for pro in pros_text.split('\n'):
                 if pro.strip():
-                    st.markdown(f"- ✅ {pro.strip()}")
+                    st.markdown(f"- {pro.strip()}")
         else:
             st.write("No positive markers reported.")
             
     with col_c:
-        st.markdown("<h4 style='color: #f85149;'>➖ Cons</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #f85149;'>Cons</h4>", unsafe_allow_html=True)
         if pd.notna(cons_text) and cons_text.strip():
             for con in cons_text.split('\n'):
                 if con.strip():
-                    st.markdown(f"- ❌ {con.strip()}")
+                    st.markdown(f"- {con.strip()}")
         else:
             st.write("No cautionary markers reported.")
 else:
@@ -121,7 +121,7 @@ st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin:
 st.subheader("Financial Statements Visualization (2019-2024)")
 
 # P&L Line Chart
-st.write("📈 **Income Statement Trends (Revenue & Profit)**")
+st.write("**Income Statement Trends (Revenue & Profit)**")
 df_pl = load_query(f"SELECT year, sales, net_profit FROM profitandloss WHERE company_id = '{ticker}' ORDER BY year")
 
 if not df_pl.empty:
@@ -141,7 +141,7 @@ else:
     st.write("No P&L statements found.")
 
 # Balance Sheet Stacked Bar Chart
-st.write("📊 **Balance Sheet Structure (Assets & Liabilities)**")
+st.write("**Balance Sheet Structure (Assets & Liabilities)**")
 df_bs = load_query(f"SELECT year, fixed_assets, investments, cash_and_equivalents, current_assets, equity_capital, reserves, borrowings, other_liabilities FROM balancesheet WHERE company_id = '{ticker}' ORDER BY year")
 
 if not df_bs.empty:
@@ -172,7 +172,7 @@ else:
     st.write("No balance sheet statements found.")
 
 # Cash Flow Chart
-st.write("💸 **Cash Flow Activity**")
+st.write("**Cash Flow Activity**")
 df_cf = load_query(f"SELECT year, operating_activity, investing_activity, financing_activity, net_cash_flow FROM cashflow WHERE company_id = '{ticker}' ORDER BY year")
 
 if not df_cf.empty:
@@ -200,6 +200,6 @@ df_docs = load_query(f"SELECT year, document_name, document_url FROM documents W
 
 if not df_docs.empty:
     for _, doc in df_docs.iterrows():
-        st.markdown(f"- 📄 [{doc['year']} Annual Report]({doc['document_url']}) - {doc['document_name']}")
+        st.markdown(f"- [{doc['year']} Annual Report]({doc['document_url']}) - {doc['document_name']}")
 else:
     st.info("No annual report links found for this company.")

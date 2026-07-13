@@ -11,7 +11,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Annual Reports - Nifty 100",
-    page_icon="📄",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -19,7 +19,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("📄 Annual Reports & Corporate Filings")
+st.title("Annual Reports & Corporate Filings")
 st.markdown("Search and access annual reports with clickable BSE PDF filing links.")
 
 # 1. Select Ticker
@@ -51,16 +51,16 @@ if not df_docs.empty:
         
         st.markdown(
             f"<div style='background-color: rgba(128, 128, 128, 0.05); border: 1px solid rgba(128, 128, 128, 0.15); padding: 15px; border-radius: 6px; margin-bottom: 10px;'>"
-            f"<h5 style='margin-bottom: 5px; color: #0969da;'>📅 FY {year} - {doc_name}</h5>"
+            f"<h5 style='margin-bottom: 5px; color: #0969da;'>FY {year} - {doc_name}</h5>"
             f"<p style='margin-bottom: 10px; font-size: 13px; color: #57606a;'>Type: {doc_type}</p>"
-            f"<a href='{url}' target='_blank' style='display: inline-block; background-color: #1a7f37; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold;'>📥 Click to View / Download BSE PDF</a>"
+            f"<a href='{url}' target='_blank' style='display: inline-block; background-color: #1a7f37; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold;'>Click to View / Download BSE PDF</a>"
             f"</div>",
             unsafe_allow_html=True
         )
 else:
     st.markdown(
         "<div style='padding: 20px; background-color: #f8514922; border: 1px solid #f8514955; border-radius: 6px;'>"
-        "<h5 style='color: #f85149; margin-bottom: 5px;'>⚠️ Missing Filings</h5>"
+        "<h5 style='color: #f85149; margin-bottom: 5px;'>Missing Filings</h5>"
         "<p style='margin: 0;'>No annual report filings could be found for this company in the database.</p>"
         "</div>",
         unsafe_allow_html=True

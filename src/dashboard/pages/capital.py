@@ -12,7 +12,7 @@ from utils.shared import render_navigation, load_query
 # Set Page Config
 st.set_page_config(
     page_title="Capital Allocation Map - Nifty 100",
-    page_icon="🗺️",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,7 +20,7 @@ st.set_page_config(
 # Render Custom Sidebar
 render_navigation()
 
-st.title("🗺️ Capital Allocation Pattern Map")
+st.title("Capital Allocation Pattern Map")
 st.markdown("Treemap visualization categorizing Nifty 100 companies by their CFO, CFI, and CFF cash flow patterns.")
 
 # 1. Load latest year (2024-03) cash flows
@@ -69,6 +69,21 @@ df_cf['Pattern Description'] = df_cf['Pattern'].map(pattern_descriptions)
 df_cf_clean = df_cf.dropna(subset=['Market Cap (Cr)'])
 
 if not df_cf_clean.empty:
+    # 2b. Compute Capital Allocation Category metrics
+    healthy_count = len(df_cf[df_cf['Pattern'] == '[+, -, -]'])
+    growth_count = len(df_cf[df_cf['Pattern'] == '[+, -, +]'])
+    risk_count = len(df_cf[df_cf['Pattern'].isin(['[-, -, -]', '[-, +, +]', '[-, +, -]'])])
+    
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        st.metric(label="Stable Operations [+, -, -]", value=f"{healthy_count} Companies", delta="Reinvesting CFO / Stable")
+    with col_m2:
+        st.metric(label="Aggressive Growth [+, -, +]", value=f"{growth_count} Companies", delta="CFO + Debt for Capex")
+    with col_m3:
+        st.metric(label="Distressed / Cash Burn", value=f"{risk_count} Companies", delta="Negative CFO / High Risk", delta_color="inverse")
+        
+    st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
+    
     st.subheader("Nifty 100 Cash Allocation Map (FY24)")
     st.markdown("Size: Market Cap (Cr) | Color: Capital Allocation Pattern Category")
     
@@ -84,36 +99,51 @@ if not df_cf_clean.empty:
         "[-, +, -]": "#8c1d1d"   # Dark Red (Liquidation)
     }
     
-    fig_tree = px.treemap(
+    fig_sun = px.sunburst(
         df_cf_clean,
-        path=['Pattern Description', 'Sector', 'Ticker'],
+        path=['Pattern Description', 'Ticker'],
         values='Market Cap (Cr)',
         color='Pattern',
         hover_data=['Company Name', 'CFO', 'CFI', 'CFF'],
         color_discrete_map=custom_colors
     )
-    fig_tree.update_layout(
-        margin=dict(t=30, b=30, l=10, r=10),
+    fig_sun.update_layout(
+        margin=dict(t=10, b=10, l=10, r=10),
+        height=650,
         paper_bgcolor='rgba(0,0,0,0)',
         font_family='Times New Roman'
     )
-    st.plotly_chart(fig_tree, use_container_width=True)
+    st.plotly_chart(fig_sun, use_container_width=True)
     
-    st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-top: 1px solid rgba(128, 128, 128, 0.15); margin: 25px 0;'>", unsafe_allow_html=True)
     
-    # 4. Filter List by Pattern Category
-    st.subheader("Search Companies by Pattern Category")
-    selected_pattern = st.selectbox("Select Capital Pattern Category:", list(pattern_descriptions.keys()))
+    # 4. Filter List by Pattern Category - Redesigned Side-by-Side Layout
+    st.subheader("Pattern Group Drill-Down")
     
-    df_filtered = df_cf[df_cf['Pattern'] == selected_pattern].copy()
+    col_drill_left, col_drill_right = st.columns([5, 7])
     
-    st.write(f"**Pattern Description**: {pattern_descriptions[selected_pattern]}")
-    st.write(f"**Companies in this category**: {len(df_filtered)}")
-    
-    df_filtered_display = df_filtered[['Ticker', 'Company Name', 'Sector', 'CFO', 'CFI', 'CFF']].copy()
-    for col in ['CFO', 'CFI', 'CFF']:
-        df_filtered_display[col] = df_filtered_display[col].map(lambda x: f"₹{x:,.2f} Cr" if pd.notna(x) else "N/A")
+    with col_drill_left:
+        st.markdown("**Select Category to Inspect**")
+        selected_pattern = st.selectbox("Capital Pattern Category:", list(pattern_descriptions.keys()))
         
-    st.dataframe(df_filtered_display, use_container_width=True, hide_index=True)
+        df_filtered = df_cf[df_cf['Pattern'] == selected_pattern].copy()
+        
+        # Style details as a clean container card
+        st.markdown(
+            f"<div style='background-color: rgba(128, 128, 128, 0.05); border: 1px solid rgba(128, 128, 128, 0.15); padding: 20px; border-radius: 6px; margin-top: 15px;'>"
+            f"<h5 style='margin-top: 0; color: #0969da;'>Category Profile: {selected_pattern}</h5>"
+            f"<p style='font-size: 14px; margin-bottom: 8px;'><b>Description:</b> {pattern_descriptions[selected_pattern]}</p>"
+            f"<p style='font-size: 14px; margin-bottom: 0;'><b>Represented Tickers:</b> {len(df_filtered)} companies</p>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+        
+    with col_drill_right:
+        st.markdown(f"**Member Companies ({len(df_filtered)})**")
+        df_filtered_display = df_filtered[['Ticker', 'Company Name', 'Sector', 'CFO', 'CFI', 'CFF']].copy()
+        for col in ['CFO', 'CFI', 'CFF']:
+            df_filtered_display[col] = df_filtered_display[col].map(lambda x: f"₹{x:,.2f} Cr" if pd.notna(x) else "N/A")
+            
+        st.dataframe(df_filtered_display.style.set_properties(**{'text-align': 'center'}), use_container_width=True, hide_index=True)
 else:
     st.info("No cash flow data available for treemap generation.")
