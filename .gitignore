@@ -198,6 +198,7 @@ reports/*.html
 
 # Database files (SQLite)
 *.db
+!data/nifty100.db
 *.db-journal
 *.sqlite
 *.sqlite3
