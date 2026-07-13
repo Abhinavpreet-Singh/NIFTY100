@@ -1,6 +1,7 @@
 """
 Shared Utilities for Nifty 100 Dashboard
 Handles SQLite database loading, caching, and custom sidebar navigation.
+Implements strictly modern Light Theme (White Mode) with Times New Roman typography.
 """
 
 import os
@@ -8,7 +9,7 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-# Custom styling to give a premium, state-of-the-art look
+# Strictly modern White Mode CSS Theme with Times New Roman typography
 THEME_CSS = """
 <style>
 /* Hide default streamlit page list in sidebar */
@@ -16,38 +17,79 @@ THEME_CSS = """
     display: none !important;
 }
 
-/* Custom background and text colors */
+/* Base Light Theme styling */
 .stApp {
-    background-color: #0e1117;
-    color: #e0e6ed;
-    font-family: 'Inter', sans-serif;
+    background-color: #ffffff;
+    color: #1f2328;
+    font-family: 'Times New Roman', Georgia, Times, serif !important;
 }
 
-/* Sidebar styling */
+/* Times New Roman on all elements */
+h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select, table, th, td {
+    font-family: 'Times New Roman', Georgia, Times, serif !important;
+}
+
+/* Sidebar styling - modern clean light-grey */
 [data-testid="stSidebar"] {
-    background-color: #161b22;
-    border-right: 1px solid #30363d;
+    background-color: #f6f8fa !important;
+    border-right: 1px solid #d0d7de !important;
 }
 
-/* Metric tile styling */
+/* Metric tile styling - modern clean white card with border & shadow */
 div[data-testid="metric-container"] {
-    background-color: #21262d;
-    border: 1px solid #30363d;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff !important;
+    border: 1px solid #d0d7de !important;
+    padding: 18px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+    color: #1f2328 !important;
 }
 
-/* Buttons and primary color */
+/* Text inside metric */
+div[data-testid="metric-container"] label {
+    color: #57606a !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
+    color: #0969da !important;
+    font-size: 26px !important;
+    font-weight: bold !important;
+}
+
+/* Input boxes & selectbox styling */
+.stTextInput>div>div>input, .stSelectbox>div>div>div {
+    background-color: #ffffff !important;
+    color: #1f2328 !important;
+    border: 1px solid #d0d7de !important;
+    border-radius: 6px !important;
+}
+
+/* Buttons and primary color - modern GitHub green */
 .stButton>button {
-    background-color: #238636;
-    color: white;
-    border-radius: 6px;
-    border: none;
-    transition: background-color 0.2s ease;
+    background-color: #1a7f37 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(27, 31, 36, 0.15) !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;
+    transition: background-color 0.2s ease !important;
 }
 .stButton>button:hover {
-    background-color: #2ea043;
+    background-color: #1b8c3f !important;
+}
+
+/* Custom horizontal line */
+hr {
+    border-top: 1px solid #d0d7de !important;
+    margin: 20px 0 !important;
+}
+
+/* Table container styling */
+.stDataFrame {
+    border: 1px solid #d0d7de !important;
+    border-radius: 6px !important;
 }
 </style>
 """
@@ -76,14 +118,14 @@ def render_navigation():
     
     st.sidebar.markdown(
         "<div style='text-align: center; padding: 10px 0;'>"
-        "<h2 style='color: #58a6ff; margin-bottom: 5px;'>Nifty 100</h2>"
-        "<p style='color: #8b949e; font-size: 13px;'>Financial Intelligence Platform</p>"
+        "<h2 style='color: #0969da; margin-bottom: 5px; font-family: \"Times New Roman\", serif;'>Nifty 100</h2>"
+        "<p style='color: #57606a; font-size: 13px; font-family: \"Times New Roman\", serif;'>Financial Intelligence Platform</p>"
         "</div>"
-        "<hr style='border-top: 1px solid #30363d; margin: 10px 0;'>",
+        "<hr style='border-top: 1px solid #d0d7de; margin: 10px 0;'>",
         unsafe_allow_html=True
     )
     
-    # Custom links
+    # Custom links styled for white mode
     st.sidebar.page_link("src/dashboard/app.py", label="🏠 Home / Overview")
     st.sidebar.page_link("src/dashboard/pages/company.py", label="🏢 Company Profile")
     st.sidebar.page_link("src/dashboard/pages/screener.py", label="🔍 Financial Screener")
@@ -94,7 +136,7 @@ def render_navigation():
     st.sidebar.page_link("src/dashboard/pages/documents.py", label="📄 Annual Reports")
     
     st.sidebar.markdown(
-        "<div style='position: fixed; bottom: 10px; left: 10px; font-size: 11px; color: #8b949e;'>"
+        "<div style='position: fixed; bottom: 10px; left: 10px; font-size: 11px; color: #57606a; font-family: \"Times New Roman\", serif;'>"
         "v1.0.0 | Google DeepMind Pair"
         "</div>",
         unsafe_allow_html=True
